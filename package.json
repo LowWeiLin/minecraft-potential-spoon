@@ -8,9 +8,12 @@
     "mineflayer-auto-auth": "^0.1.1",
     "mineflayer-navigate": "0.0.9"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "flow-bin": "^0.33.0"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "flow": "flow; test $? -eq 0 -o $? -eq 2"
   },
   "author": "",
   "license": "ISC"
