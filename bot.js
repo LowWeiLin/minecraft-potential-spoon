@@ -1,3 +1,5 @@
+// @flow
+
 var mineflayer = require('mineflayer');
 var util = require('util');
 
@@ -66,7 +68,7 @@ bot.on('chat', function(username, message) {
 
 var findTargetNear = getRandomPlayer;
 
-function getRandomPlayer(bot) {
+function getRandomPlayer(bot): ?Object {
   var name = Object.keys(bot.players).filter(function(p) {
     return p != botUsername;
   })[0];
