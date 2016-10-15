@@ -9,11 +9,12 @@
     "mineflayer-navigate": "0.0.9"
   },
   "devDependencies": {
-    "flow-bin": "^0.33.0"
+    "flow-bin": "^0.33.0",
+    "flow-remove-types": "^1.0.4"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "flow": "flow; test $? -eq 0 -o $? -eq 2"
+    "start": "flow; flow-node"
   },
   "author": "",
   "license": "ISC"
