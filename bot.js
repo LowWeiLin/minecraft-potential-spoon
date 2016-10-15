@@ -13,6 +13,7 @@ var bot = mineflayer.createBot({
   port: process.argv[3] || 25565,
   username: botUsername
 });
+require('mineflayer-auto-auth')(bot, 'pass123');
 
 console.log(process.argv);
 
