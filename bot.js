@@ -21,6 +21,10 @@ console.log(process.argv);
 
 (require('mineflayer-navigate'))(mineflayer)(bot);
 
+bot.on('message', function(message) {
+  acceptTpaRequests(bot, message);
+});
+
 bot.on('chat', function(username, message) {
   if (username === bot.username) return;
   if (!_.startsWith(message, bot.username + ' ')) return;
@@ -195,5 +199,16 @@ function moveTo(bot, goalPosition, done) {
     bot.navigate.walk(result.path, function() {
       moveTo(bot, goalPosition, done);
     });
+  }
+}
+
+function acceptTpaRequests(bot, message) {
+  if (!message.extra || message.extra.length !== 3) {
+    return;
+  }
+  var msgExtra0 = "To teleport, type ";
+  var msgExtra1 = "/tpaccept";
+  if (message.extra[0].text == msgExtra0 && message.extra[1].text == msgExtra1) {
+    bot.chat('/tpaccept');
   }
 }
