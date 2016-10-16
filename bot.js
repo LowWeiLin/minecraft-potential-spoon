@@ -94,6 +94,10 @@ function digDown() {
   dig(bot.entity.position.offset(0, -1, 0));
 }
 
+function digSouth() {
+  dig(bot.entity.position.offset(1, 0, 0));
+}
+
 function dig(position, callback) {
   if (!callback) {
     callback = onDiggingCompleted;
@@ -122,36 +126,6 @@ function dig(position, callback) {
   }
 }
 
-function digAndMove(opt, callback) {
-  if (!opt) {
-    opt = {};
-  }
-  var offset = opt.offset || [0, -1, 0];
-  var position = bot.entity.position.offset(offset[0], offset[1], offset[2]);
-  
-  dig(position, moveToPosition);
-
-  function moveToPosition(err) {
-    moveTo(bot, position, callback);
-  }
-}
-
-function digAsPromise(opt) {
-  return new Promise(function(resolve, reject) {
-    digAndMove(opt, function(data, err) {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(data);
-      }
-    });
-  });
-}
-
-function digSouth() {
-  dig(bot.entity.position.offset(1, 0, 0  ));
-}
-
 function digStaircase() {
   var offsets = [[0, -1, 0], [1, 0, 0], [1, 1, 0], [1, 0, 0]];
 
@@ -159,7 +133,7 @@ function digStaircase() {
   _.times(50, () =>
     _.forEach(offsets, function(offset, index) {
       p = p.then(function() {
-        return digAsPromise( { 
+        return digAndMoveAsPromise( { 
           offset: offset
         } );  
       }).catch(function (err) {
@@ -172,9 +146,38 @@ function digStaircase() {
     bot.chat('finish dig');
   }).catch(function (err) {
     console.error(err.stack);
-  })
+  });
 
   Promise.resolve(p);
+}
+
+function digAndMoveAsPromise(opt) {
+  return new Promise(function(resolve, reject) {
+    digAndMove(opt, function(err) {
+      if (err) {
+        reject(err);
+      } else {
+        resolve();
+      }
+    });
+  });
+}
+
+function digAndMove(opt, callback) {
+  if (!opt) {
+    opt = {};
+  }
+  var offset = opt.offset || [0, -1, 0];
+  var position = bot.entity.position.offset(offset[0], offset[1], offset[2]);
+  
+  dig(position, moveToPosition);
+
+  function moveToPosition(err) {
+    if (err) {
+      callback(err);
+    }
+    moveTo(bot, position, callback);
+  }
 }
 
 function build() {
