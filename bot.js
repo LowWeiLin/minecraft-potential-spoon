@@ -1,3 +1,5 @@
+// @flow
+
 var mineflayer = require('mineflayer');
 var util = require('util');
 
@@ -10,7 +12,7 @@ var botUsername = process.argv[4] || 'botbot';
 
 var bot = mineflayer.createBot({
   host: process.argv[2] || 'localhost',
-  port: process.argv[3] || 25565,
+  port: +process.argv[3] || 25565,
   username: botUsername
 });
 require('mineflayer-auto-auth')(bot, 'pass123');
@@ -66,7 +68,7 @@ bot.on('chat', function(username, message) {
 
 var findTargetNear = getRandomPlayer;
 
-function getRandomPlayer(bot) {
+function getRandomPlayer(bot): ?Object {
   var name = Object.keys(bot.players).filter(function(p) {
     return p != botUsername;
   })[0];
