@@ -1,5 +1,6 @@
 var mineflayer = require('mineflayer');
 var util = require('util');
+var _ = require('lodash');
 
 if (process.argv.length < 2 || process.argv.length > 5) {
   console.log('Usage : node bot.js [<host>] [<port>] [<name>]');
@@ -26,7 +27,13 @@ bot.on('chat', function(username, message) {
       sayItems();
       break;
     case 'dig':
-      dig();
+      digDown();
+      break;  
+    case 'dig south':
+      digSouth();
+      break;
+    case 'dig staircase':
+      digStaircase();
       break;
     case 'build':
       build();
@@ -83,16 +90,26 @@ function sayItems(items) {
   }
 }
 
-function dig() {
+function digDown() {
+  dig(bot.entity.position.offset(0, -1, 0));
+}
+
+function dig(position, callback) {
+  if (!callback) {
+    callback = onDiggingCompleted;
+  }
+
   if (bot.targetDigBlock) {
     bot.chat('already digging ' + bot.targetDigBlock.name);
   } else {
-    var target = bot.blockAt(bot.entity.position.offset(0, -1, 0));
+    var target = bot.blockAt(position);
     if (target && bot.canDigBlock(target)) {
       bot.chat('starting to dig ' + target.name);
-      bot.dig(target, onDiggingCompleted);
+      bot.dig(target, callback);
     } else {
+
       bot.chat('cannot dig');
+      callback(':(');
     }
   }
 
@@ -103,6 +120,61 @@ function dig() {
     }
     bot.chat('finished digging ' + target.name);
   }
+}
+
+function digAndMove(opt, callback) {
+  if (!opt) {
+    opt = {};
+  }
+  var offset = opt.offset || [0, -1, 0];
+  var position = bot.entity.position.offset(offset[0], offset[1], offset[2]);
+  
+  dig(position, moveToPosition);
+
+  function moveToPosition(err) {
+    moveTo(bot, position, callback);
+  }
+}
+
+function digAsPromise(opt) {
+  return new Promise(function(resolve, reject) {
+    digAndMove(opt, function(data, err) {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(data);
+      }
+    });
+  });
+}
+
+function digSouth() {
+  dig(bot.entity.position.offset(1, 0, 0  ));
+}
+
+function digStaircase() {
+  var offsets = [[0, -1, 0], [1, 0, 0], [1, 1, 0], [1, 0, 0]];
+
+  var p = Promise.resolve();
+  _.times(50, () =>
+    _.forEach(offsets, function(offset, index) {
+      p = p.then(function() {
+        return digAsPromise( { 
+          offset: offset
+        } );  
+      }).catch(function (err) {
+        console.log("can't dig");
+      });
+    })
+  );
+
+  p.then(function() {
+    bot.chat('finish dig');
+  }).catch(function (err) {
+    console.error(err.stack);
+  })
+
+  Promise.resolve(p);
 }
 
 function build() {
