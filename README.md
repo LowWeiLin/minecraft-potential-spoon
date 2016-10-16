@@ -10,7 +10,16 @@ Learn to program and kill
 
 ## Run
 
+### Mac/Linux
+
 ```sh
 npm install
 npm start bot.js 192.168.1.3
+```
+
+### Windows
+
+```sh
+npm install
+start bot.js 192.168.1.3
 ```
