@@ -1,5 +1,5 @@
 // @flow
-
+var _ = require('lodash');
 var mineflayer = require('mineflayer');
 var util = require('util');
 
@@ -23,6 +23,8 @@ console.log(process.argv);
 
 bot.on('chat', function(username, message) {
   if (username === bot.username) return;
+  if (!_.startsWith(message, bot.username + ' ')) return;
+  message = _.replace(message, bot.username + ' ', '');
   switch (message) {
     case 'list':
       sayItems();
@@ -53,7 +55,7 @@ bot.on('chat', function(username, message) {
       break;
     case 'come':
       bot.chat('stop being so impatient');
-      var target = findTargetNear(bot);
+      var target = getPlayerByUsername(bot, username);
       if (target) {
         moveTo(bot, target.position, function() {
           bot.chat('sup');
@@ -67,6 +69,10 @@ bot.on('chat', function(username, message) {
 });
 
 var findTargetNear = getRandomPlayer;
+
+function getPlayerByUsername(bot, username): ?Object {
+  return bot.players[username] && bot.players[username].entity;
+}
 
 function getRandomPlayer(bot): ?Object {
   var name = Object.keys(bot.players).filter(function(p) {
