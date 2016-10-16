@@ -75,10 +75,7 @@ bot.on('chat', function(username, message) {
 var findTargetNear = getRandomPlayer;
 
 function getPlayerByUsername(bot, username): ?Object {
-  var name = Object.keys(bot.players).filter(function(p) {
-    return p == username;
-  })[0];
-  return bot.players[name] && bot.players[name].entity;
+  return bot.players[username] && bot.players[username].entity;
 }
 
 function getRandomPlayer(bot): ?Object {
