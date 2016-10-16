@@ -22,6 +22,7 @@ console.log(process.argv);
 
 bot.on('chat', function(username, message) {
   if (username === bot.username) return;
+
   switch (message) {
     case 'list':
       sayItems();
@@ -32,7 +33,7 @@ bot.on('chat', function(username, message) {
     case 'dig south':
       digSouth();
       break;
-    case 'dig staircase':
+    case 'staircase':
       digStaircase();
       break;
     case 'build':
@@ -108,10 +109,9 @@ function dig(position, callback) {
   } else {
     var target = bot.blockAt(position);
     if (target && bot.canDigBlock(target)) {
-      bot.chat('starting to dig ' + target.name);
+      //bot.chat('starting to dig ' + target.name);
       bot.dig(target, callback);
     } else {
-
       bot.chat('cannot dig');
       callback(':(');
     }
@@ -138,6 +138,8 @@ function digStaircase() {
         } );  
       }).catch(function (err) {
         console.log("can't dig");
+        console.log(err);
+        
       });
     })
   );
@@ -154,13 +156,23 @@ function digStaircase() {
 function digAndMoveAsPromise(opt) {
   return new Promise(function(resolve, reject) {
     digAndMove(opt, function(err) {
-      if (err) {
+      if (err && err !== 'arrived') {
         reject(err);
       } else {
+        sleep(500);
         resolve();
       }
     });
   });
+}
+
+function sleep(milliseconds) {
+  var start = new Date().getTime();
+  for (var i = 0; i < 1e7; i++) {
+    if ((new Date().getTime() - start) > milliseconds){
+      break;
+    }
+  }
 }
 
 function digAndMove(opt, callback) {
@@ -170,7 +182,20 @@ function digAndMove(opt, callback) {
   var offset = opt.offset || [0, -1, 0];
   var position = bot.entity.position.offset(offset[0], offset[1], offset[2]);
   
-  dig(position, moveToPosition);
+  var startTime = (new Date()).getTime();
+  var succeeded = false;
+  while (((new Date).getTime() - startTime ) <= 3000) {
+    var target = bot.blockAt(position);
+    if (target && bot.canDigBlock(target)) {
+      dig(position, moveToPosition);
+      succeeded = true;
+      break;
+    }
+  }
+
+  if (!succeeded) {
+    moveToPosition('failed, unable to poll to dig in time');
+  }
 
   function moveToPosition(err) {
     if (err) {
