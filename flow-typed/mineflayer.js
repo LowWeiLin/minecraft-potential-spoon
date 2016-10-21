@@ -18,7 +18,8 @@ declare module "mineflayer" {
       position: {
         offset: any,
         x: any,
-        y: any
+        y: any,
+        z: any
       }
     },
     setControlState: (state: string, value: bool) => void,

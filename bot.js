@@ -62,12 +62,16 @@ bot.on('chat', function(username, message) {
         bot.attack(target);
       }
       break;
+    case 'jump':
+      bot.setControlState('jump', true);
+      bot.setControlState('jump', false);
+      break;
     case 'come':
       bot.chat('stop being so impatient');
       var target = getPlayerByUsername(bot, username);
       if (target) {
         moveTo(bot, target.position, function() {
-          bot.chat('sup');
+          bot.chat('sup, im at (' + bot.entity.position.x.toFixed(2) +', '+bot.entity.position.y.toFixed(2) +', '+bot.entity.position.z.toFixed(2)+ ')');
         });
       }
       break;
@@ -115,9 +119,9 @@ var dig = function() {
     } else {
       var target = bot.blockAt(bot.entity.position.offset(0, -1, 0));
       if (target && bot.canDigBlock(target)) {
-        bot.chat('starting to dig ' + target.name);
+        // bot.chat('starting to dig ' + target.name);
         bot.dig(target, function () {
-          bot.chat('finished digging ' + target.name);
+          // bot.chat('finished digging ' + target.name);
           resolve();
         });
       } else {
@@ -180,6 +184,7 @@ var something = dig;
 
 function keepDigging(n) {
   if (n === 0) {
+    bot.chat('finished digging');
     return Promise.resolve();
   // } else if (world) {
   //   return something();
