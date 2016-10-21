@@ -30,6 +30,21 @@ bot.on('message', function(message) {
   acceptTpaRequests(bot, message);
 });
 
+function myItems()
+{
+  var items={};
+  bot.inventory.items().forEach(function(item) {
+    if(items[item.name]===undefined) items[item.name]=0;
+    items[item.name]+=item.count;
+  });
+  var nitems=[];
+  for(var i in items)
+  {
+    nitems.push([i,items[i]]);
+  }
+  return nitems;
+}
+
 bot.on('chat', function(username, message) {
   if (username === bot.username) return;
   if (!_.startsWith(message, bot.username + ' ')) return;
@@ -43,6 +58,10 @@ bot.on('chat', function(username, message) {
       break;
     case 'build':
       build();
+      break;
+    case 'listItems':
+      var output=myItems().map(function(a){return a[0]+":"+a[1];}).join(", ");
+      bot.chat(output);
       break;
     case 'equip dirt':
       equipDirt();
