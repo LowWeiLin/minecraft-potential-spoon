@@ -3,12 +3,12 @@ var _ = require('lodash');
 var mineflayer = require('mineflayer');
 var util = require('util');
 var Task = require('./tasks/task');
+var repl = require('repl');
 
 if (process.argv.length < 2 || process.argv.length > 5) {
   console.log('Usage : node bot.js [<host>] [<port>] [<name>]');
   process.exit(1);
 }
-
 
 var botUsername = process.argv[4] || 'botbot';
 
@@ -358,3 +358,14 @@ function acceptTpaRequests(bot, message) {
     bot.chat('/tpaccept');
   }
 }
+
+// REPL
+
+var r = repl.start('> ');
+r.context.bot = bot;
+r.context.mineflayer = mineflayer;
+r.on('exit', () => {
+  bot.quit();
+  process.exit();
+});
+
