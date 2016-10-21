@@ -48,8 +48,10 @@ function myItems()
 var toss = function(type, count) {
   return new Promise((resolve, reject) => {
     bot.toss(type, null, count, function() {
-      return Promise.resolve();
+      resolve();
     });
+  }).catch(err => {
+    console.log(err.stack);
   });
 }
 
@@ -57,27 +59,19 @@ var tossOne = function() {
   return new Promise((resolve, reject) => {
     var items = bot.inventory.items();
     if (items.length === 0) {
-      console.log('bbb');
+      bot.chat('I got no items =(');
       return Promise.resolve();
     } else {
-      console.log('ccc');
-      return toss(items[0].type, items[0].count);
+      return toss(items[0].type, items[0].count).then(()=>{resolve()});
     }
   });
 }
 
 var tossAll = function(type, count) {
   return new Promise((resolve, reject) => {
-    var items = bot.inventory.items();
-    if (items.length === 0) {
-      bot.chat('No more items');
-      return Promise.resolve();
-    } else {
-      console.log('aaaa');
-      return tossOne().then(()=>{sleep(1500)})
-                      .then(()=>{tossAll()});
-    }
-  });
+    return tossOne().then(()=>{return sleep(500)})
+                    .then(()=>{return tossAll()});
+    });
 }
 
 bot.on('chat', function(username, message) {
