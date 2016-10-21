@@ -39,7 +39,7 @@ bot.on('chat', function(username, message) {
       sayItems();
       break;
     case 'dig':
-      dig();
+      keepDigging(10);
       break;
     case 'build':
       build();
@@ -100,33 +100,34 @@ function sayItems(items) {
   }
 }
 
-// var dig = function() {
-//   return new Promise((resolve, reject) => {
-//     if (bot.targetDigBlock) {
-//       bot.chat('already digging ' + bot.targetDigBlock.name);
-//     } else {
-//       var target = bot.blockAt(bot.entity.position.offset(0, -1, 0));
-//       if (target && bot.canDigBlock(target)) {
-//         bot.chat('starting to dig ' + target.name);
-//         bot.dig(target, function () {
-//           bot.chat('finished digging ' + target.name);
-//           resolve();
-//         });
-//       } else {
-//         bot.chat('cannot dig');
-//       }
-//     }
-//   }).catch(err => {
-//     console.log(err.stack);
-//   });
-// }
+var sleep = function(ms) {
+  return new Promise((resolve, reject) => {
+    setTimeout(function() {
+      resolve();
+    }, ms);
+  });
+}
 
-// function keepDigging(n) {
-//   var task = dig();
-//   _.times(n - 1, () => {
-//     task = task.then(dig());
-//   });
-// }
+var dig = function() {
+  return new Promise((resolve, reject) => {
+    if (bot.targetDigBlock) {
+      bot.chat('already digging ' + bot.targetDigBlock.name);
+    } else {
+      var target = bot.blockAt(bot.entity.position.offset(0, -1, 0));
+      if (target && bot.canDigBlock(target)) {
+        bot.chat('starting to dig ' + target.name);
+        bot.dig(target, function () {
+          bot.chat('finished digging ' + target.name);
+          resolve();
+        });
+      } else {
+        bot.chat('cannot dig');
+      }
+    }
+  }).catch(err => {
+    console.log(err.stack);
+  });
+}
 
 var world = false;
 
@@ -136,7 +137,7 @@ function magic(promise) {
       return promise.then((value) => {
         if (world) {
           console.log('stop');
-          return interrupt();
+          return interrupt(cont, value);
         } else {
           return cont(value);
         }
@@ -148,23 +149,21 @@ function magic(promise) {
   };
 }
 
-function interrupt() {
+function interrupt(cont, value) {
   console.log('interrupted');
   return Promise.resolve();
 }
 
-keepDigging(10);
-
-function dig() {
-  var description = 'something';
-  console.log('started', description);
-  return magic(new Promise((resolve, reject) => {
-    setTimeout(() => {
-      console.log('done', description);
-      resolve(description);
-    }, 1000);
-  }));
-}
+// function dig() {
+//   var description = 'something';
+//   console.log('started', description);
+//   return magic(new Promise((resolve, reject) => {
+//     setTimeout(() => {
+//       console.log('done', description);
+//       resolve(description);
+//     }, 1000);
+//   }));
+// }
 
 // function keepDigging(n) {
 //   if (n === 0) {
@@ -185,8 +184,8 @@ function keepDigging(n) {
   // } else if (world) {
   //   return something();
   } else {
-    return dig().then(() => {
-      return keepDigging(n - 1);
+    return dig().then(() => {return sleep(1000)})
+                .then(() => {return keepDigging(n - 1);
     });
   }
 }
