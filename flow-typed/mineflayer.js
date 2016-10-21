@@ -5,7 +5,7 @@ declare module "mineflayer" {
     targetDigBlock: {
       name: string
     },
-    on: (event: string, callback: (username: string, message: string) => void) => void,
+    on: (event: string, callback: Function) => void,
     chat: (message: string) => void,
     activateItem: () => void,
     deactivateItem: () => void,
