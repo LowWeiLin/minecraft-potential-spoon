@@ -2,11 +2,14 @@
 var _ = require('lodash');
 var mineflayer = require('mineflayer');
 var util = require('util');
+var Task = require('./tasks/task');
 
 if (process.argv.length < 2 || process.argv.length > 5) {
   console.log('Usage : node bot.js [<host>] [<port>] [<name>]');
   process.exit(1);
 }
+
+var testTask = new Task('asd', undefined, undefined)
 
 var botUsername = process.argv[4] || 'botbot';
 
