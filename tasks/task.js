@@ -1,7 +1,8 @@
 "use strict";
 
 class Task {
-    constructor(name, parentTask, taskQueue) {
+    constructor(bot, name, parentTask, taskQueue) {
+        this.bot = bot;
         this.name = name;
         this.parentTask = parentTask;
         this.taskQueue = taskQueue;
@@ -10,9 +11,25 @@ class Task {
         this.priority = 1;
         this.done = false;        
     }
+
+    run() {
+
+    }
+
+    cancel() {
+
+    }
+
+    done() {
+        this._done = true;
+    }
+
+    addSubTask(task) {
+        subTasks.push(task);
+    }
 }
 
-// function Task(name, parentTask, taskQueue) {
+ // Task(name, parentTask, taskQueue) {
 //     this.name = name;
 //     this.parentTask = parentTask;
 //     this.taskQueue = taskQueue;
@@ -22,23 +39,23 @@ class Task {
 //     this.done = false;
 // }
 
-// method.atomicTask = function() {
+// atomicTask() {
 
 // };
 
-// method.run = function() {
+// run() {
 
 // };
 
-// method.cancel = function() {
+// cancel() {
 
 // };
 
-// method.done = function() {
+// done() {
 //     this._done = true;
 // };
 
-// method.addSubTask = function() {
+// addSubTask() {
 
 // };
 

@@ -9,7 +9,6 @@ if (process.argv.length < 2 || process.argv.length > 5) {
   process.exit(1);
 }
 
-var testTask = new Task('asd', undefined, undefined)
 
 var botUsername = process.argv[4] || 'botbot';
 
@@ -18,6 +17,9 @@ var bot = mineflayer.createBot({
   port: +process.argv[3] || 25565,
   username: botUsername
 });
+
+var testTask = new Task(bot, 'asd');
+
 require('mineflayer-auto-auth')(bot, 'pass123');
 
 console.log(process.argv);
@@ -98,27 +100,111 @@ function sayItems(items) {
   }
 }
 
-function dig() {
-  if (bot.targetDigBlock) {
-    bot.chat('already digging ' + bot.targetDigBlock.name);
-  } else {
-    var target = bot.blockAt(bot.entity.position.offset(0, -1, 0));
-    if (target && bot.canDigBlock(target)) {
-      bot.chat('starting to dig ' + target.name);
-      bot.dig(target, onDiggingCompleted);
-    } else {
-      bot.chat('cannot dig');
-    }
-  }
+// var dig = function() {
+//   return new Promise((resolve, reject) => {
+//     if (bot.targetDigBlock) {
+//       bot.chat('already digging ' + bot.targetDigBlock.name);
+//     } else {
+//       var target = bot.blockAt(bot.entity.position.offset(0, -1, 0));
+//       if (target && bot.canDigBlock(target)) {
+//         bot.chat('starting to dig ' + target.name);
+//         bot.dig(target, function () {
+//           bot.chat('finished digging ' + target.name);
+//           resolve();
+//         });
+//       } else {
+//         bot.chat('cannot dig');
+//       }
+//     }
+//   }).catch(err => {
+//     console.log(err.stack);
+//   });
+// }
 
-  function onDiggingCompleted(err) {
-    if (err) {
-      console.log(err.stack);
-      return;
+// function keepDigging(n) {
+//   var task = dig();
+//   _.times(n - 1, () => {
+//     task = task.then(dig());
+//   });
+// }
+
+var world = false;
+
+function magic(promise) {
+  return {
+    then: function (cont) {
+      return promise.then((value) => {
+        if (world) {
+          console.log('stop');
+          return interrupt();
+        } else {
+          return cont(value);
+        }
+      });
+    },
+    catch: function (cont) {
+      // figure out
     }
-    bot.chat('finished digging ' + target.name);
+  };
+}
+
+function interrupt() {
+  console.log('interrupted');
+  return Promise.resolve();
+}
+
+keepDigging(10);
+
+function dig() {
+  var description = 'something';
+  console.log('started', description);
+  return magic(new Promise((resolve, reject) => {
+    setTimeout(() => {
+      console.log('done', description);
+      resolve(description);
+    }, 1000);
+  }));
+}
+
+// function keepDigging(n) {
+//   if (n === 0) {
+//     return Promise.resolve();
+//   } else {
+//     return dig().then(() => {
+//       return keepDigging(n - 1);
+//     });
+//   }
+// }
+
+
+var something = dig;
+
+function keepDigging(n) {
+  if (n === 0) {
+    return Promise.resolve();
+  // } else if (world) {
+  //   return something();
+  } else {
+    return dig().then(() => {
+      return keepDigging(n - 1);
+    });
   }
 }
+
+
+
+// var i = 0;
+// var d = undefined;
+// function keepDigging() {
+//   d = dig().then(function(){
+//     i++;
+//     if (i===10) {
+//       return Promise.resolve();
+//     } else {
+//       return d.then(keepDigging);
+//     }
+//   })
+// }
 
 function build() {
   var referenceBlock = bot.blockAt(bot.entity.position.offset(0, -1, 0));
