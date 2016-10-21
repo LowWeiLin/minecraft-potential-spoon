@@ -45,6 +45,41 @@ function myItems()
   return nitems;
 }
 
+var toss = function(type, count) {
+  return new Promise((resolve, reject) => {
+    bot.toss(type, null, count, function() {
+      return Promise.resolve();
+    });
+  });
+}
+
+var tossOne = function() {
+  return new Promise((resolve, reject) => {
+    var items = bot.inventory.items();
+    if (items.length === 0) {
+      console.log('bbb');
+      return Promise.resolve();
+    } else {
+      console.log('ccc');
+      return toss(items[0].type, items[0].count);
+    }
+  });
+}
+
+var tossAll = function(type, count) {
+  return new Promise((resolve, reject) => {
+    var items = bot.inventory.items();
+    if (items.length === 0) {
+      bot.chat('No more items');
+      return Promise.resolve();
+    } else {
+      console.log('aaaa');
+      return tossOne().then(()=>{sleep(1500)})
+                      .then(()=>{tossAll()});
+    }
+  });
+}
+
 bot.on('chat', function(username, message) {
   if (username === bot.username) return;
   if (!_.startsWith(message, bot.username + ' ')) return;
@@ -62,6 +97,14 @@ bot.on('chat', function(username, message) {
     case 'listItems':
       var output=myItems().map(function(a){return a[0]+":"+a[1];}).join(", ");
       bot.chat(output);
+      break;
+    case 'toss':
+      bot.look(0,0,true);
+      tossOne();
+      break;
+    case 'tossAll':
+      bot.look(0,0,true);
+      tossAll();
       break;
     case 'equip dirt':
       equipDirt();

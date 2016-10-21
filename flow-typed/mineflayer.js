@@ -10,6 +10,8 @@ declare module "mineflayer" {
     activateItem: () => void,
     deactivateItem: () => void,
     attack: (target: any) => void,
+    attack: (target: any) => void,
+    toss: (type: number, metadata: any, count: number, callback: Function) => void,
     navigate: { stop: () => void },
     players: { [key: string]: any },
     inventory: { items: () => Array<any> },
