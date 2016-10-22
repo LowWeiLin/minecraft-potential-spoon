@@ -72,8 +72,7 @@ function sleep(ms) {
 }
 
 function isSafe(block) {
-  return block.boundingBox === 'empty' &&
-    !bot.navigate.blocksToAvoid[block.type];
+  return !bot.navigate.blocksToAvoid[block.type];
 }
 
 function findSafeStandingBlockForward(): ?Block {
@@ -115,7 +114,7 @@ function safeDig(position?: Object) {
   var adjPositions = adjacentPositions(position);
   for (var i=0 ; i<adjPositions.length ; i++) {
     var block = bot.blockAt(adjPositions[i]);
-    if (bot.navigate.blocksToAvoid[block.type]) {
+    if (isSafe(block)) {
       bot.chat("It's not safe to dig any further! " + "There is " + block.type);
       return Promise.resolve();
     }
