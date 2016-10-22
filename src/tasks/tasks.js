@@ -9,6 +9,7 @@ var bot, botUsername, mineflayer;
 type Bot = Object;
 
 // http://www.minecraftinfo.com/idlist.htm
+const AIR = 0;
 const DIRT = 3;
 const GRAVEL = 13;
 const SWORD = 267;
@@ -31,6 +32,7 @@ module.exports = function (theBot: Bot, theBotUsername: string, theMineflayer: O
         tossOne,
         tossAll,
         digStairTask,
+        digForwardTask,
         blockUnderneath,
         grindGravel,
         DIRT, GRAVEL, SWORD, // TODO do something more exhaustive
@@ -68,7 +70,23 @@ function sleep(ms) {
   });
 }
 
-function blockUnderneath() {
+function isSafe(block) {
+  return block.boundingBox === 'empty' &&
+    !bot.navigate.blocksToAvoid[block.type];
+}
+
+function findSafeStandingBlockForward() {
+  var block = null;
+  for (var i=0 ; i<3 ; i++) {
+    block = bot.blockAt(bot.entity.position.offset(1, -i, 0));
+    if (isSafe(block) && block.type !== AIR) {
+      return block;
+    }
+  }
+  return block;
+}
+
+function blockUnderneath(): Object{
   return bot.blockAt(bot.entity.position.offset(0, -1, 0));
 }
 
@@ -96,7 +114,7 @@ function dig(position?: Object): Promise<void> {
   }
 }
 
-function digWallTask(height) {
+function digWallTask(height: number) {
   if (height === 0) {
     return Promise.resolve();
   } else {
@@ -105,27 +123,44 @@ function digWallTask(height) {
   }
 }
 
+function digForwardTask(steps:number, height?: number) {
+  // Height of 2-5
+  var h = height || 2;
+  h = Math.min(h, 5);
+  h = Math.max(h, 2);
+  if (steps === 0) {
+    bot.chat("I'm done digging forward!");
+    return Promise.resolve();
+  } else {
+    var nextBlock = findSafeStandingBlockForward();
+    var nextPosition = bot.entity.position;
+    if (nextBlock != null) {
+      nextPosition = center(nextBlock.position.offset(0,1,0));
+      console.log(nextPosition.toString());
+      console.log(bot.entity.position.toString());
+      return digWallTask(h).then(() => moveTo(nextPosition))
+                           .then(() => sleep(1000))
+                           .then(() => digForwardTask(steps-1, h));
+    } else {
+      return digWallTask(h).then(()=>{
+        bot.chat("Its not safe to go any further!");
+        return Promise.resolve();
+      });
+    }
+  }
+}
+
 function digStairTask(steps: number, height?: number) {
   // Height of 2-5
   var h = height || 2;
   h = Math.min(h, 5);
   h = Math.max(h, 2);
-  console.log('height' + h);
   if (steps === 0) {
-    console.log('done');
     return Promise.resolve();
   } else {
-    console.log('dig step ' + steps);
-
     // Dig down
     return dig().then(() => sleep(1000))
-
-                // // Dig front
-                // .then(() => dig(center(bot.entity.position.offset(1,0,0))))
-                // // Dig front and up
-                // .then(() => dig(center(bot.entity.position.offset(1,1,0))))
                 .then(() => digWallTask(h))
-
                 // Move forward
                 .then(() => moveTo(center(bot.entity.position.offset(1,0,0))))
                 .then(() => sleep(100))
@@ -234,13 +269,13 @@ function moveTo(goalPosition: Object) {
   }
 
   var result = bot.navigate.findPathSync(goalPosition, {
-    timeout: 5000
+    timeout: 1000
   });
 
   console.log(util.format('status: %s, path length: %d',
     result.status, result.path.length));
 
-  if (result.path.length <= 1) {
+  if (result.path.length < 1) {
     return Promise.resolve();
   } else if (result.status === 'success') {
     return navigateTo(result.path);
