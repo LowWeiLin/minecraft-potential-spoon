@@ -82,7 +82,7 @@ bot.on('chat', function(username, message) {
       bot.chat('stop being so impatient');
       var target = tasks.getPlayerByUsername(bot, username);
       if (target) {
-        tasks.moveTo(bot, target.position, function() {
+        tasks.moveTo(target.position).then(() => {
           bot.chat('sup, im at (' + bot.entity.position.x.toFixed(2) +', '+bot.entity.position.y.toFixed(2) +', '+bot.entity.position.z.toFixed(2)+ ')');
         });
       }

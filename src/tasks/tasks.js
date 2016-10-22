@@ -164,11 +164,18 @@ function center(p) {
   return p.floored().offset(0.5, 0, 0.5);
 }
 
-// Taken from https://github.com/rom1504/rbot/blob/e3823d4d974a7cfdfc358a7007582c22bee1b4f6/task/moveTask.js#L80-L98
-function moveTo(bot, goalPosition, done) {
+function navigateTo(path) {
+  return new Promise((resolve, reject) => {
+    bot.navigate.walk(path, function() {
+        resolve();
+      });
+  });
+}
+
+function moveTo(goalPosition) {
   goalPosition = center(goalPosition);
-  if (!(goalPosition && goalPosition.distanceTo(bot.entity.position) >= 0.2)) {
-    done();
+  if (!(goalPosition && goalPosition.distanceTo(bot.entity.position) >= 0.01)) {
+    return Promise.resolve();
   }
 
   var result = bot.navigate.findPathSync(goalPosition, {
@@ -179,15 +186,13 @@ function moveTo(bot, goalPosition, done) {
     result.status, result.path.length));
 
   if (result.path.length <= 1) {
-    done();
+    return Promise.resolve();
   } else if (result.status === 'success') {
-    bot.navigate.walk(result.path, done);
+    return navigateTo(result.path);
   } else if (result.status === 'noPath') {
-    done();
+    return Promise.resolve();
   } else {
-    bot.navigate.walk(result.path, function() {
-      moveTo(bot, goalPosition, done);
-    });
+    return navigateTo(result.path);
   }
 }
 
