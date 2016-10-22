@@ -14,12 +14,12 @@ Learn to program and kill
 
 ```sh
 npm install
-npm start bot.js 192.168.1.3
+npm start 192.168.1.3
 ```
 
 ### Windows
 
 ```sh
 npm install
-start bot.js 192.168.1.3
+start 192.168.1.3
 ```
