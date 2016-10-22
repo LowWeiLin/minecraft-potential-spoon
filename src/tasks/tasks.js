@@ -1,6 +1,7 @@
+//@ flow
 
 var util = require('util');
-
+var _ = require('lodash');
 var bot, mineflayer;
 
 module.exports = function (theBot, theMineflayer) {
@@ -19,6 +20,7 @@ module.exports = function (theBot, theMineflayer) {
         myItems,
         tossOne,
         tossAll,
+        digStairTask,
     };
 };
 
@@ -73,6 +75,44 @@ function dig(position) {
       bot.chat('cannot dig');
       return Promise.resolve();
     }
+  }
+}
+
+var digWallTask = function(height) {
+  if (height === 0) {
+    return Promise.resolve();
+  } else {
+    return dig(center(bot.entity.position.offset(1,height-1,0)))
+              .then(()=>{return digWallTask(height-1)});
+  }
+}
+
+function digStairTask(steps, height) {
+  // Height of 2-5
+  height = height === undefined? 2 : height;
+  height = Math.min(height, 5);
+  height = Math.max(height, 2);
+  console.log('height' + height);
+  if (steps === 0) {
+    console.log('done');
+    return Promise.resolve();
+  } else {
+    console.log('dig step ' + steps);
+
+    // Dig down
+    return dig().then(()=>{return sleep(1000)})
+
+                // // Dig front
+                // .then(()=>{return dig(center(bot.entity.position.offset(1,0,0)))})
+                // // Dig front and up
+                // .then(()=>{return dig(center(bot.entity.position.offset(1,1,0)))})
+                .then(()=>{return digWallTask(height)})
+
+                // Move forward
+                .then(()=>{return moveTo(center(bot.entity.position.offset(1,0,0)))})
+                .then(()=>{return sleep(100)})
+                // Repeat
+                .then(()=>{return digStairTask(steps-1, height)});
   }
 }
 
@@ -178,7 +218,7 @@ function navigateTo(path) {
 
 function moveTo(goalPosition) {
   goalPosition = center(goalPosition);
-  if (!(goalPosition && goalPosition.distanceTo(bot.entity.position) >= 0.01)) {
+  if (goalPosition.distanceTo(bot.entity.position) <= 0.1) {
     return Promise.resolve();
   }
 
