@@ -88,12 +88,14 @@ bot.on('chat', function(username, message) {
       bot.setControlState('jump', false);
       break;
     case 'come':
-      bot.chat('stop being so impatient');
+      bot.chat('On the way boss');
       var target = tasks.getPlayerByUsername(bot, username);
       if (target) {
         tasks.moveTo(target.position, 10).then(() => {
-          bot.chat('sup, im at ' + bot.entity.position.toString());
+          bot.chat('Hey im at ' + bot.entity.position.toString());
         });
+      } else {
+        bot.chat('/tpa ' + username);
       }
       break;
     case 'stop':
