@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "main": "bot.js",
+  "repository": " https://github.com/LowWeiLin/minecraft-potential-spoon",
   "dependencies": {
     "lodash": "^4.16.4",
     "mineflayer": "1.7.5",
