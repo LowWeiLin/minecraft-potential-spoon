@@ -47,7 +47,10 @@ bot.on('chat', function(username, message) {
     case 'digStair':
       tasks.digStairTask(10);
       break;
-    case 'listItems':
+    case 'digForward':
+      tasks.digForwardTask(10);
+      break;
+    case 'list':
       var output=tasks.myItems().map(function(a){return a[0]+":"+a[1];}).join(", ");
       bot.chat(output);
       break;
@@ -55,7 +58,7 @@ bot.on('chat', function(username, message) {
       bot.look(0,0,true);
       tasks.tossOne();
       break;
-    case 'tossAll':
+    case 'toss':
       bot.look(0,0,true);
       tasks.tossAll();
       break;

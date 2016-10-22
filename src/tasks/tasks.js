@@ -7,8 +7,10 @@ var util = require('util');
 var bot, botUsername, mineflayer;
 
 type Bot = Object;
+type Block = Object;
 
 // http://www.minecraftinfo.com/idlist.htm
+const AIR = 0;
 const DIRT = 3;
 const GRAVEL = 13;
 const SWORD = 267;
@@ -31,6 +33,7 @@ module.exports = function (theBot: Bot, theBotUsername: string, theMineflayer: O
         tossOne,
         tossAll,
         digStairTask,
+        digForwardTask,
         blockUnderneath,
         grindGravel,
         DIRT, GRAVEL, SWORD, // TODO do something more exhaustive
@@ -68,7 +71,22 @@ function sleep(ms) {
   });
 }
 
-function blockUnderneath() {
+function isSafe(block) {
+  return block.boundingBox === 'empty' &&
+    !bot.navigate.blocksToAvoid[block.type];
+}
+
+function findSafeStandingBlockForward(): ?Block {
+  for (var i=0 ; i<3 ; i++) {
+    var block = bot.blockAt(bot.entity.position.offset(1, -i, 0));
+    if (isSafe(block) && block.type !== AIR) {
+      return block;
+    }
+  }
+  return null;
+}
+
+function blockUnderneath(): Block {
   return bot.blockAt(bot.entity.position.offset(0, -1, 0));
 }
 
@@ -96,7 +114,7 @@ function dig(position?: Object): Promise<void> {
   }
 }
 
-function digWallTask(height) {
+function digWallTask(height: number): Promise<void> {
   if (height === 0) {
     return Promise.resolve();
   } else {
@@ -105,27 +123,44 @@ function digWallTask(height) {
   }
 }
 
-function digStairTask(steps: number, height?: number) {
+function digForwardTask(steps:number, height?: number): Promise<void> {
   // Height of 2-5
   var h = height || 2;
   h = Math.min(h, 5);
   h = Math.max(h, 2);
-  console.log('height' + h);
   if (steps === 0) {
-    console.log('done');
+    bot.chat("I'm done digging forward!");
     return Promise.resolve();
   } else {
-    console.log('dig step ' + steps);
+    var nextBlock = findSafeStandingBlockForward();
+    var nextPosition = bot.entity.position;
+    if (nextBlock) {
+      nextPosition = center(nextBlock.position.offset(0,1,0));
+      console.log(nextPosition.toString());
+      console.log(bot.entity.position.toString());
+      return digWallTask(h).then(() => moveTo(nextPosition))
+                           .then(() => sleep(1000))
+                           .then(() => digForwardTask(steps-1, h));
+    } else {
+      return digWallTask(h).then(()=>{
+        bot.chat("Its not safe to go any further!");
+        return Promise.resolve();
+      });
+    }
+  }
+}
 
+function digStairTask(steps: number, height?: number): Promise<void> {
+  // Height of 2-5
+  var h = height || 2;
+  h = Math.min(h, 5);
+  h = Math.max(h, 2);
+  if (steps === 0) {
+    return Promise.resolve();
+  } else {
     // Dig down
     return dig().then(() => sleep(1000))
-
-                // // Dig front
-                // .then(() => dig(center(bot.entity.position.offset(1,0,0))))
-                // // Dig front and up
-                // .then(() => dig(center(bot.entity.position.offset(1,1,0))))
                 .then(() => digWallTask(h))
-
                 // Move forward
                 .then(() => moveTo(center(bot.entity.position.offset(1,0,0))))
                 .then(() => sleep(100))
@@ -227,20 +262,20 @@ function navigateTo(path) {
   });
 }
 
-function moveTo(goalPosition: Object) {
+function moveTo(goalPosition: Object): Promise<void> {
   goalPosition = center(goalPosition);
   if (goalPosition.distanceTo(bot.entity.position) <= 0.1) {
     return Promise.resolve();
   }
 
   var result = bot.navigate.findPathSync(goalPosition, {
-    timeout: 5000
+    timeout: 1000
   });
 
   console.log(util.format('status: %s, path length: %d',
     result.status, result.path.length));
 
-  if (result.path.length <= 1) {
+  if (result.path.length < 1) {
     return Promise.resolve();
   } else if (result.status === 'success') {
     return navigateTo(result.path);
@@ -301,8 +336,8 @@ var tossOne = function() {
 
 var tossAll = function() {
   return new Promise((resolve, reject) => {
-    return tossOne().then(()=>{return sleep(500)})
-                    .then(()=>{return tossAll()});
+    return tossOne().then(() => sleep(500))
+                    .then(() => tossAll());
     });
 }
 
@@ -316,6 +351,12 @@ function grindGravel(): Promise<void> {
   const DIG = false;
 
   function aux(state: boolean, flipflops: number): Promise<void> {
+
+    // flipflops only increments beyond this point when there is no
+    // gravel in the bot's inventory and no gravel to mine, i.e. we
+    // should stop. It's a bit ugly so hopefully we can find a nicer
+    // alternative.
+
     if (flipflops > 5) {
       bot.chat('done grinding gravel');
       return Promise.resolve();
@@ -324,6 +365,9 @@ function grindGravel(): Promise<void> {
         return equipItem(GRAVEL)
           .then(() => buildUnder(GRAVEL))
           .catch(err => {
+            // It's possible this happens due to races on the inventory state.
+            // Currently we sleep to mitigate this, but if that fails... try
+            // digging instead...?
             console.log('could not place block', err);
             return aux(DIG, 0);
           })
