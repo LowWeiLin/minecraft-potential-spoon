@@ -1,6 +1,7 @@
+//@ flow
 
 var util = require('util');
-
+var _ = require('lodash');
 var bot, mineflayer;
 
 module.exports = function (theBot, theMineflayer) {
@@ -19,6 +20,7 @@ module.exports = function (theBot, theMineflayer) {
         myItems,
         tossOne,
         tossAll,
+        digStairTask,
     };
 };
 
@@ -53,23 +55,65 @@ function sleep(ms) {
   });
 }
 
-function dig() {
+function digTask(targetBlock) {
   return new Promise((resolve, reject) => {
-    if (bot.targetDigBlock) {
-      bot.chat('already digging ' + bot.targetDigBlock.name);
+      bot.dig(targetBlock, function () {
+        resolve();
+      });
+    });
+}
+
+function dig(position) {
+  position = position ? position : bot.entity.position.offset(0, -1, 0)
+  if (bot.targetDigBlock) {
+    bot.chat('already digging ' + bot.targetDigBlock.name);
+  } else {
+    var target = bot.blockAt(position);
+    if (target && bot.canDigBlock(target)) {
+      return digTask(target);
     } else {
-      var target = bot.blockAt(bot.entity.position.offset(0, -1, 0));
-      if (target && bot.canDigBlock(target)) {
-        bot.dig(target, function () {
-          resolve();
-        });
-      } else {
-        bot.chat('cannot dig');
-      }
+      bot.chat('cannot dig');
+      return Promise.resolve();
     }
-  }).catch(err => {
-    console.log(err.stack);
-  });
+  }
+}
+
+var digWallTask = function(height) {
+  if (height === 0) {
+    return Promise.resolve();
+  } else {
+    return dig(center(bot.entity.position.offset(1,height-1,0)))
+              .then(()=>{return digWallTask(height-1)});
+  }
+}
+
+function digStairTask(steps, height) {
+  // Height of 2-5
+  height = height === undefined? 2 : height;
+  height = Math.min(height, 5);
+  height = Math.max(height, 2);
+  console.log('height' + height);
+  if (steps === 0) {
+    console.log('done');
+    return Promise.resolve();
+  } else {
+    console.log('dig step ' + steps);
+
+    // Dig down
+    return dig().then(()=>{return sleep(1000)})
+
+                // // Dig front
+                // .then(()=>{return dig(center(bot.entity.position.offset(1,0,0)))})
+                // // Dig front and up
+                // .then(()=>{return dig(center(bot.entity.position.offset(1,1,0)))})
+                .then(()=>{return digWallTask(height)})
+
+                // Move forward
+                .then(()=>{return moveTo(center(bot.entity.position.offset(1,0,0)))})
+                .then(()=>{return sleep(100)})
+                // Repeat
+                .then(()=>{return digStairTask(steps-1, height)});
+  }
 }
 
 var world = false;
@@ -164,11 +208,18 @@ function center(p) {
   return p.floored().offset(0.5, 0, 0.5);
 }
 
-// Taken from https://github.com/rom1504/rbot/blob/e3823d4d974a7cfdfc358a7007582c22bee1b4f6/task/moveTask.js#L80-L98
-function moveTo(bot, goalPosition, done) {
+function navigateTo(path) {
+  return new Promise((resolve, reject) => {
+    bot.navigate.walk(path, function() {
+        resolve();
+      });
+  });
+}
+
+function moveTo(goalPosition) {
   goalPosition = center(goalPosition);
-  if (!(goalPosition && goalPosition.distanceTo(bot.entity.position) >= 0.2)) {
-    done();
+  if (goalPosition.distanceTo(bot.entity.position) <= 0.1) {
+    return Promise.resolve();
   }
 
   var result = bot.navigate.findPathSync(goalPosition, {
@@ -179,15 +230,13 @@ function moveTo(bot, goalPosition, done) {
     result.status, result.path.length));
 
   if (result.path.length <= 1) {
-    done();
+    return Promise.resolve();
   } else if (result.status === 'success') {
-    bot.navigate.walk(result.path, done);
+    return navigateTo(result.path);
   } else if (result.status === 'noPath') {
-    done();
+    return Promise.resolve();
   } else {
-    bot.navigate.walk(result.path, function() {
-      moveTo(bot, goalPosition, done);
-    });
+    return navigateTo(result.path);
   }
 }
 

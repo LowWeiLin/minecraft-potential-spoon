@@ -44,6 +44,9 @@ bot.on('chat', function(username, message) {
     case 'build':
       tasks.build();
       break;
+    case 'digStair':
+      tasks.digStairTask(10);
+      break;
     case 'listItems':
       var output=tasks.myItems().map(function(a){return a[0]+":"+a[1];}).join(", ");
       bot.chat(output);
@@ -82,8 +85,8 @@ bot.on('chat', function(username, message) {
       bot.chat('stop being so impatient');
       var target = tasks.getPlayerByUsername(bot, username);
       if (target) {
-        tasks.moveTo(bot, target.position, function() {
-          bot.chat('sup, im at (' + bot.entity.position.x.toFixed(2) +', '+bot.entity.position.y.toFixed(2) +', '+bot.entity.position.z.toFixed(2)+ ')');
+        tasks.moveTo(target.position, 10).then(() => {
+          bot.chat('sup, im at ' + bot.entity.position.toString());
         });
       }
       break;
