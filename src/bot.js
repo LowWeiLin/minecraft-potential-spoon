@@ -32,11 +32,10 @@ bot.on('message', function(message) {
 
 bot.on('chat', function(username, message) {
   if (username === bot.username) return;
-  var regex = new RegExp('^' + message.split(' ')[0]);
-  var match = regex.exec(bot.username);
-  if (match === null) return;
+  var splitMessage = message.split(' ');
+  if (!(new RegExp('^' + splitMessage[0]).test(bot.username))) return;
   
-  message = message.split(' ').slice(1).join(' ').trim();
+  message = splitMessage.slice(1).join(' ').trim();
   
   switch (message) {
     case 'list':
