@@ -53,23 +53,27 @@ function sleep(ms) {
   });
 }
 
-function dig() {
+function digTask(targetBlock) {
   return new Promise((resolve, reject) => {
-    if (bot.targetDigBlock) {
-      bot.chat('already digging ' + bot.targetDigBlock.name);
+      bot.dig(targetBlock, function () {
+        resolve();
+      });
+    });
+}
+
+function dig(position) {
+  position = position ? position : bot.entity.position.offset(0, -1, 0)
+  if (bot.targetDigBlock) {
+    bot.chat('already digging ' + bot.targetDigBlock.name);
+  } else {
+    var target = bot.blockAt(position);
+    if (target && bot.canDigBlock(target)) {
+      return digTask(target);
     } else {
-      var target = bot.blockAt(bot.entity.position.offset(0, -1, 0));
-      if (target && bot.canDigBlock(target)) {
-        bot.dig(target, function () {
-          resolve();
-        });
-      } else {
-        bot.chat('cannot dig');
-      }
+      bot.chat('cannot dig');
+      return Promise.resolve();
     }
-  }).catch(err => {
-    console.log(err.stack);
-  });
+  }
 }
 
 var world = false;
