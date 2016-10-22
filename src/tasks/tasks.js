@@ -98,6 +98,31 @@ function digTask(targetBlock) {
   });
 }
 
+function adjacentPositions(position: Object): Array<Object> {
+  var adj = [];
+  adj.push(position.offset(1, 0, 0));
+  adj.push(position.offset(-1, 0, 0));
+  adj.push(position.offset(0, 1, 0));
+  adj.push(position.offset(0, -1, 0));
+  adj.push(position.offset(0, 0, 1));
+  adj.push(position.offset(0, 0, -1));
+  return adj;
+}
+
+function safeDig(position?: Object) {
+  position = position ? position : bot.entity.position.offset(0, -1, 0)
+  // Check blocks adjacent to target before digging.
+  var adjPositions = adjacentPositions(position);
+  for (var i=0 ; i<adjPositions.length ; i++) {
+    var block = bot.blockAt(adjPositions[i]);
+    if (bot.navigate.blocksToAvoid[block.type]) {
+      bot.chat("It's not safe to dig any further! " + "There is " + block.type);
+      return Promise.resolve();
+    }
+  }
+  return dig(position);
+}
+
 function dig(position?: Object): Promise<void> {
   position = position ? position : bot.entity.position.offset(0, -1, 0)
   if (bot.targetDigBlock) {
@@ -118,7 +143,7 @@ function digWallTask(height: number): Promise<void> {
   if (height === 0) {
     return Promise.resolve();
   } else {
-    return dig(center(bot.entity.position.offset(1,height-1,0)))
+    return safeDig(center(bot.entity.position.offset(1,height-1,0)))
               .then(() => digWallTask(height-1));
   }
 }
@@ -136,10 +161,8 @@ function digForwardTask(steps:number, height?: number): Promise<void> {
     var nextPosition = bot.entity.position;
     if (nextBlock) {
       nextPosition = center(nextBlock.position.offset(0,1,0));
-      console.log(nextPosition.toString());
-      console.log(bot.entity.position.toString());
       return digWallTask(h).then(() => moveTo(nextPosition))
-                           .then(() => sleep(1000))
+                           .then(() => sleep(500))
                            .then(() => digForwardTask(steps-1, h));
     } else {
       return digWallTask(h).then(()=>{
@@ -158,14 +181,21 @@ function digStairTask(steps: number, height?: number): Promise<void> {
   if (steps === 0) {
     return Promise.resolve();
   } else {
-    // Dig down
-    return dig().then(() => sleep(1000))
-                .then(() => digWallTask(h))
-                // Move forward
-                .then(() => moveTo(center(bot.entity.position.offset(1,0,0))))
-                .then(() => sleep(100))
-                // Repeat
-                .then(() => digStairTask(steps-1, h));
+    var nextBlock = findSafeStandingBlockForward();
+    var nextPosition = bot.entity.position;
+    if (nextBlock != null) {
+      nextPosition = center(nextBlock.position.offset(0,1,0));
+      return safeDig().then(() => sleep(1000))
+                  .then(() => digWallTask(h))
+                  .then(() => moveTo(nextPosition))
+                  .then(() => sleep(100))
+                  .then(() => digStairTask(steps-1, h));
+    } else {
+      return digWallTask(h).then(()=>{
+        bot.chat("Its not safe to go any further!");
+        return Promise.resolve();
+      });
+    }
   }
 }
 
