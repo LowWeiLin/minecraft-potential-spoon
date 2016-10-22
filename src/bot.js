@@ -26,6 +26,11 @@ console.log(process.argv);
 
 (require('mineflayer-navigate'))(mineflayer)(bot);
 
+// http://www.minecraftinfo.com/idlist.htm
+const DIRT = 3;
+const GRAVEL = 13;
+const SWORD = 267;
+
 bot.on('message', function(message) {
   tasks.acceptTpaRequests(bot, message);
 });
@@ -60,10 +65,13 @@ bot.on('chat', function(username, message) {
       tasks.tossAll();
       break;
     case 'equip dirt':
-      tasks.equipDirt();
+      tasks.equipItem(DIRT);
       break;
     case 'equip sword':
-      tasks.equipSword();
+      tasks.equipItem(SWORD);
+      break;
+    case 'equip gravel':
+      tasks.equipItem(GRAVEL);
       break;
     case 'do':
       bot.chat('activating item');

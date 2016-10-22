@@ -1,5 +1,6 @@
 //@ flow
 
+var _ = require('lodash');
 var util = require('util');
 var _ = require('lodash');
 var bot, mineflayer;
@@ -11,8 +12,7 @@ module.exports = function (theBot, theMineflayer) {
         sayItems,
         keepDigging,
         build,
-        equipSword,
-        equipDirt,
+        equipItem,
         findTargetNear,
         getPlayerByUsername,
         moveTo,
@@ -154,47 +154,41 @@ function keepDigging(n) {
 }
 
 function build() {
-  var referenceBlock = bot.blockAt(bot.entity.position.offset(0, -1, 0));
+  return new Promise((resolve, reject) => {
+    var referenceBlock = bot.blockAt(bot.entity.position.offset(0, -1, 0));
 
-  var jumpY = bot.entity.position.y + 1.0;
-  bot.setControlState('jump', true);
-  bot.on('move', placeIfHighEnough);
+    var jumpY = bot.entity.position.y + 1.0;
+    bot.setControlState('jump', true);
+    bot.on('move', placeIfHighEnough);
 
-  function placeIfHighEnough() {
-    if (bot.entity.position.y > jumpY) {
-      bot.placeBlock(referenceBlock, mineflayer.vec3(0, 1, 0), function(err) {
-        if (err) {
-          bot.chat(err.message);
-          return;
-        }
-        bot.chat('Placing a block was successful');
-      });
-      bot.setControlState('jump', false);
-      bot.removeListener('move', placeIfHighEnough);
-    }
-  }
-}
-
-function equipDirt() {
-  bot.equip(0x03, 'hand', function(err) {
-    if (err) {
-      bot.chat('unable to equip dirt: ' + err.message);
-    } else {
-      bot.chat('equipped dirt');
+    function placeIfHighEnough() {
+      if (bot.entity.position.y > jumpY) {
+        bot.placeBlock(referenceBlock, mineflayer.vec3(0, 1, 0), function(err) {
+          if (err) {
+            bot.chat(err.message);
+            reject(err);
+          }
+          bot.chat('Placing a block was successful');
+          resolve();
+        });
+        bot.setControlState('jump', false);
+        bot.removeListener('move', placeIfHighEnough);
+      }
     }
   });
 }
 
-// http://www.minecraftinfo.com/idlist.htm
-function equipSword() {
-  bot.equip(267, 'hand', function(err) {
-    if (err) {
-      bot.chat('unable to equip sword: ' + err.message);
-    } else {
-      bot.chat('equipped sword');
-    }
+var equipItem = _.curry(function(id) {
+  return new Promise((resolve, reject) => {
+    bot.equip(id, 'hand', function(err) {
+      if (err) {
+        reject(id);
+      } else {
+        resolve(id);
+      }
+    });
   });
-}
+});
 
 function itemToString(item) {
   if (item) {
