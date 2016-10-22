@@ -1,7 +1,6 @@
 // @flow
 var _ = require('lodash');
 var mineflayer = require('mineflayer');
-var util = require('util');
 var Task = require('./tasks/task');
 var repl = require('repl');
 
@@ -20,7 +19,7 @@ var bot = mineflayer.createBot({
 
 require('mineflayer-auto-auth')(bot, 'pass123');
 
-var tasks = require('./tasks/tasks')(bot);
+var tasks = require('./tasks/tasks')(bot, mineflayer);
 
 console.log(process.argv);
 

@@ -1,8 +1,11 @@
 
-var bot;
+var util = require('util');
 
-module.exports = function (theBot) {
+var bot, mineflayer;
+
+module.exports = function (theBot, theMineflayer) {
     bot = theBot;
+    mineflayer = theMineflayer;
     return {
         sayItems,
         keepDigging,
