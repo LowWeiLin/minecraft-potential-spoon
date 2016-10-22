@@ -56,10 +56,6 @@ bot.on('chat', function(username, message) {
       break;
     case 'toss':
       bot.look(0,0,true);
-      tasks.tossOne();
-      break;
-    case 'toss':
-      bot.look(0,0,true);
       tasks.tossAll();
       break;
     case 'equip dirt':
