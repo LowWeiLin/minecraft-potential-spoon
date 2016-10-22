@@ -33,7 +33,11 @@ bot.on('message', function(message) {
 bot.on('chat', function(username, message) {
   if (username === bot.username) return;
   var splitMessage = message.split(' ');
-  if (!(new RegExp('^' + splitMessage[0]).test(bot.username))) return;
+  try {
+    if (!(new RegExp('^' + splitMessage[0]).test(bot.username))) return;
+  } catch (err) {
+    return;
+  }
   
   message = splitMessage.slice(1).join(' ').trim();
   
