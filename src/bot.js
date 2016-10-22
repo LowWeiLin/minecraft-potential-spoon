@@ -3,7 +3,6 @@
 
 var _ = require('lodash');
 var mineflayer = require('mineflayer');
-var Task = require('./tasks/task');
 var repl = require('repl');
 
 if (process.argv.length < 2 || process.argv.length > 5) {

@@ -45,7 +45,7 @@ function sayItems(items) {
   }
 }
 
-var sleep = function(ms) {
+function sleep(ms) {
   return new Promise((resolve, reject) => {
     setTimeout(function() {
       resolve();
@@ -53,16 +53,14 @@ var sleep = function(ms) {
   });
 }
 
-var dig = function() {
+function dig() {
   return new Promise((resolve, reject) => {
     if (bot.targetDigBlock) {
       bot.chat('already digging ' + bot.targetDigBlock.name);
     } else {
       var target = bot.blockAt(bot.entity.position.offset(0, -1, 0));
       if (target && bot.canDigBlock(target)) {
-        // bot.chat('starting to dig ' + target.name);
         bot.dig(target, function () {
-          // bot.chat('finished digging ' + target.name);
           resolve();
         });
       } else {
@@ -99,57 +97,17 @@ function interrupt(cont, value) {
   return Promise.resolve();
 }
 
-// function dig() {
-//   var description = 'something';
-//   console.log('started', description);
-//   return magic(new Promise((resolve, reject) => {
-//     setTimeout(() => {
-//       console.log('done', description);
-//       resolve(description);
-//     }, 1000);
-//   }));
-// }
-
-// function keepDigging(n) {
-//   if (n === 0) {
-//     return Promise.resolve();
-//   } else {
-//     return dig().then(() => {
-//       return keepDigging(n - 1);
-//     });
-//   }
-// }
-
-
-var something = dig;
 
 function keepDigging(n) {
   if (n === 0) {
     bot.chat('finished digging');
     return Promise.resolve();
-  // } else if (world) {
-  //   return something();
   } else {
     return dig().then(() => {return sleep(1000)})
                 .then(() => {return keepDigging(n - 1);
     });
   }
 }
-
-
-
-// var i = 0;
-// var d = undefined;
-// function keepDigging() {
-//   d = dig().then(function(){
-//     i++;
-//     if (i===10) {
-//       return Promise.resolve();
-//     } else {
-//       return d.then(keepDigging);
-//     }
-//   })
-// }
 
 function build() {
   var referenceBlock = bot.blockAt(bot.entity.position.offset(0, -1, 0));
