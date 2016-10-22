@@ -1,141 +1,21 @@
-// @flow
-var _ = require('lodash');
-var mineflayer = require('mineflayer');
-var util = require('util');
-var Task = require('./tasks/task');
-var repl = require('repl');
 
-if (process.argv.length < 2 || process.argv.length > 5) {
-  console.log('Usage : node bot.js [<host>] [<port>] [<name>]');
-  process.exit(1);
-}
+var bot;
 
-var botUsername = process.argv[4] || 'botbot';
-
-var bot = mineflayer.createBot({
-  host: process.argv[2] || 'localhost',
-  port: +process.argv[3] || 25565,
-  username: botUsername
-});
-
-var testTask = new Task(bot, 'asd');
-
-require('mineflayer-auto-auth')(bot, 'pass123');
-
-console.log(process.argv);
-
-(require('mineflayer-navigate'))(mineflayer)(bot);
-
-bot.on('message', function(message) {
-  acceptTpaRequests(bot, message);
-});
-
-function myItems()
-{
-  var items={};
-  bot.inventory.items().forEach(function(item) {
-    if(items[item.name]===undefined) items[item.name]=0;
-    items[item.name]+=item.count;
-  });
-  var nitems=[];
-  for(var i in items)
-  {
-    nitems.push([i,items[i]]);
-  }
-  return nitems;
-}
-
-var toss = function(type, count) {
-  return new Promise((resolve, reject) => {
-    bot.toss(type, null, count, function() {
-      resolve();
-    });
-  }).catch(err => {
-    console.log(err.stack);
-  });
-}
-
-var tossOne = function() {
-  return new Promise((resolve, reject) => {
-    var items = bot.inventory.items();
-    if (items.length === 0) {
-      bot.chat('I got no items =(');
-      return Promise.resolve();
-    } else {
-      return toss(items[0].type, items[0].count).then(()=>{resolve()});
-    }
-  });
-}
-
-var tossAll = function(type, count) {
-  return new Promise((resolve, reject) => {
-    return tossOne().then(()=>{return sleep(500)})
-                    .then(()=>{return tossAll()});
-    });
-}
-
-bot.on('chat', function(username, message) {
-  if (username === bot.username) return;
-  if (!_.startsWith(message, bot.username + ' ')) return;
-  message = _.replace(message, bot.username + ' ', '');
-  switch (message) {
-    case 'list':
-      sayItems();
-      break;
-    case 'dig':
-      keepDigging(10);
-      break;
-    case 'build':
-      build();
-      break;
-    case 'listItems':
-      var output=myItems().map(function(a){return a[0]+":"+a[1];}).join(", ");
-      bot.chat(output);
-      break;
-    case 'toss':
-      bot.look(0,0,true);
-      tossOne();
-      break;
-    case 'tossAll':
-      bot.look(0,0,true);
-      tossAll();
-      break;
-    case 'equip dirt':
-      equipDirt();
-      break;
-    case 'equip sword':
-      equipSword();
-      break;
-    case 'do':
-      bot.chat('activating item');
-      bot.activateItem();
-      bot.deactivateItem();
-      break;
-    case 'attack':
-      bot.chat('die');
-      var target = findTargetNear(bot);
-      if (target) {
-        bot.attack(target);
-      }
-      break;
-    case 'jump':
-      bot.setControlState('jump', true);
-      bot.setControlState('jump', false);
-      break;
-    case 'come':
-      bot.chat('stop being so impatient');
-      var target = getPlayerByUsername(bot, username);
-      if (target) {
-        moveTo(bot, target.position, function() {
-          bot.chat('sup, im at (' + bot.entity.position.x.toFixed(2) +', '+bot.entity.position.y.toFixed(2) +', '+bot.entity.position.z.toFixed(2)+ ')');
-        });
-      }
-      break;
-    case 'stop':
-      bot.navigate.stop();
-      break;
-  }
-});
+module.exports = function (theBot) {
+    bot = theBot;
+    return {
+        sayItems,
+        keepDigging,
+        build,
+        equipSword,
+        equipDirt,
+        findTargetNear,
+        getPlayerByUsername,
+        moveTo,
+        acceptTpaRequests,
+        myItems,
+    };
+};
 
 var findTargetNear = getRandomPlayer;
 
@@ -359,13 +239,18 @@ function acceptTpaRequests(bot, message) {
   }
 }
 
-// REPL
-
-var r = repl.start('> ');
-r.context.bot = bot;
-r.context.mineflayer = mineflayer;
-r.on('exit', () => {
-  bot.quit();
-  process.exit();
-});
+function myItems()
+{
+  var items={};
+  bot.inventory.items().forEach(function(item) {
+    if(items[item.name]===undefined) items[item.name]=0;
+    items[item.name]+=item.count;
+  });
+  var nitems=[];
+  for(var i in items)
+  {
+    nitems.push([i,items[i]]);
+  }
+  return nitems;
+}
 
