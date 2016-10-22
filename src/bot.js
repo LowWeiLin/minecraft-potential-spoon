@@ -49,6 +49,14 @@ bot.on('chat', function(username, message) {
       var output=tasks.myItems().map(function(a){return a[0]+":"+a[1];}).join(", ");
       bot.chat(output);
       break;
+    case 'toss':
+      bot.look(0,0,true);
+      tasks.tossOne();
+      break;
+    case 'tossAll':
+      bot.look(0,0,true);
+      tasks.tossAll();
+      break;
     case 'equip dirt':
       tasks.equipDirt();
       break;

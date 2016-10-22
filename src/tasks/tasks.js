@@ -17,6 +17,8 @@ module.exports = function (theBot, theMineflayer) {
         moveTo,
         acceptTpaRequests,
         myItems,
+        tossOne,
+        tossAll,
     };
 };
 
@@ -257,3 +259,31 @@ function myItems()
   return nitems;
 }
 
+var toss = function(type, count) {
+  return new Promise((resolve, reject) => {
+    bot.toss(type, null, count, function() {
+      resolve();
+    });
+  }).catch(err => {
+    console.log(err.stack);
+  });
+}
+
+var tossOne = function() {
+  return new Promise((resolve, reject) => {
+    var items = bot.inventory.items();
+    if (items.length === 0) {
+      bot.chat('I got no items =(');
+      return Promise.resolve();
+    } else {
+      return toss(items[0].type, items[0].count).then(()=>{resolve()});
+    }
+  });
+}
+
+var tossAll = function(type, count) {
+  return new Promise((resolve, reject) => {
+    return tossOne().then(()=>{return sleep(500)})
+                    .then(()=>{return tossAll()});
+    });
+}
