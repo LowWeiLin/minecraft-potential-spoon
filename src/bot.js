@@ -32,8 +32,12 @@ bot.on('message', function(message) {
 
 bot.on('chat', function(username, message) {
   if (username === bot.username) return;
-  if (!_.startsWith(message, bot.username + ' ')) return;
-  message = _.replace(message, bot.username + ' ', '');
+  var regex = new RegExp('^' + message.split(' ')[0]);
+  var match = regex.exec(bot.username);
+  if (match === null) return;
+  
+  message = message.split(' ').slice(1).join(' ').trim();
+  
   switch (message) {
     case 'list':
       tasks.sayItems();
