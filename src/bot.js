@@ -1,4 +1,6 @@
 // @flow
+'use strict';
+
 var _ = require('lodash');
 var mineflayer = require('mineflayer');
 var Task = require('./tasks/task');
@@ -84,13 +86,27 @@ bot.on('chat', function(username, message) {
   }
 });
 
-// REPL
+console.log("\nType 'help()' to see exposed functions");
+var repl = repl.start('> ');
 
-var r = repl.start('> ');
-r.context.bot = bot;
-r.context.mineflayer = mineflayer;
-r.on('exit', () => {
+repl.context.help = () => {
+  for (let p in tasks) {
+    console.log(p);
+  }
+};
+repl.context.bot = bot;
+repl.context.mineflayer = mineflayer;
+for (let p in tasks) {
+  if (tasks.hasOwnProperty(p)) {
+    if (repl.context[p]) {
+      console.warn('Warning: REPL object already has property', p);
+    } else {
+      repl.context[p] = tasks[p];
+    }
+  }
+}
+
+repl.on('exit', () => {
   bot.quit();
   process.exit();
 });
-
