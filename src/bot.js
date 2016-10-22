@@ -20,16 +20,11 @@ var bot = mineflayer.createBot({
 
 require('mineflayer-auto-auth')(bot, 'pass123');
 
-var tasks = require('./tasks/tasks')(bot, mineflayer);
+var tasks = require('./tasks/tasks')(bot, botUsername, mineflayer);
 
 console.log(process.argv);
 
 (require('mineflayer-navigate'))(mineflayer)(bot);
-
-// http://www.minecraftinfo.com/idlist.htm
-const DIRT = 3;
-const GRAVEL = 13;
-const SWORD = 267;
 
 bot.on('message', function(message) {
   tasks.acceptTpaRequests(bot, message);
@@ -47,7 +42,7 @@ bot.on('chat', function(username, message) {
       tasks.keepDigging(10);
       break;
     case 'build':
-      tasks.build();
+      tasks.buildUnder();
       break;
     case 'digStair':
       tasks.digStairTask(10);
@@ -65,13 +60,13 @@ bot.on('chat', function(username, message) {
       tasks.tossAll();
       break;
     case 'equip dirt':
-      tasks.equipItem(DIRT);
+      tasks.equipItem(tasks.DIRT);
       break;
     case 'equip sword':
-      tasks.equipItem(SWORD);
+      tasks.equipItem(tasks.SWORD);
       break;
     case 'equip gravel':
-      tasks.equipItem(GRAVEL);
+      tasks.equipItem(tasks.GRAVEL);
       break;
     case 'do':
       bot.chat('activating item');
@@ -101,6 +96,9 @@ bot.on('chat', function(username, message) {
     case 'stop':
       bot.navigate.stop();
       break;
+    case 'grind gravel':
+      tasks.grindGravel();
+      break;
   }
 });
 
@@ -112,6 +110,7 @@ repl.context.help = () => {
     console.log(p);
   }
 };
+repl.context.ld = _;
 repl.context.bot = bot;
 repl.context.mineflayer = mineflayer;
 for (let p in tasks) {

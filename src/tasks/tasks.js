@@ -1,17 +1,27 @@
-//@ flow
+// @flow
+'use strict';
 
 var _ = require('lodash');
 var util = require('util');
-var _ = require('lodash');
-var bot, mineflayer;
 
-module.exports = function (theBot, theMineflayer) {
+var bot, botUsername, mineflayer;
+
+type Bot = Object;
+
+// http://www.minecraftinfo.com/idlist.htm
+const DIRT = 3;
+const GRAVEL = 13;
+const SWORD = 267;
+const STONE_SHOVEL = 273;
+
+module.exports = function (theBot: Bot, theBotUsername: string, theMineflayer: Object) {
     bot = theBot;
+    botUsername = theBotUsername;
     mineflayer = theMineflayer;
     return {
         sayItems,
         keepDigging,
-        build,
+        buildUnder,
         equipItem,
         findTargetNear,
         getPlayerByUsername,
@@ -21,23 +31,26 @@ module.exports = function (theBot, theMineflayer) {
         tossOne,
         tossAll,
         digStairTask,
+        blockUnderneath,
+        grindGravel,
+        DIRT, GRAVEL, SWORD, // TODO do something more exhaustive
     };
 };
 
 var findTargetNear = getRandomPlayer;
 
-function getPlayerByUsername(bot, username): ?Object {
+function getPlayerByUsername(bot: Bot, username: string): ?Object {
   return bot.players[username] && bot.players[username].entity;
 }
 
-function getRandomPlayer(bot): ?Object {
+function getRandomPlayer(bot: Bot): ?Object {
   var name = Object.keys(bot.players).filter(function(p) {
     return p != botUsername;
   })[0];
   return bot.players[name] && bot.players[name].entity;
 }
 
-function sayItems(items) {
+function sayItems(items?: Object[]) {
   items = items || bot.inventory.items();
   var output = items.map(itemToString).join(', ');
   if (output) {
@@ -55,18 +68,23 @@ function sleep(ms) {
   });
 }
 
-function digTask(targetBlock) {
-  return new Promise((resolve, reject) => {
-      bot.dig(targetBlock, function () {
-        resolve();
-      });
-    });
+function blockUnderneath() {
+  return bot.blockAt(bot.entity.position.offset(0, -1, 0));
 }
 
-function dig(position) {
+function digTask(targetBlock) {
+  return new Promise((resolve, reject) => {
+    bot.dig(targetBlock, function () {
+      resolve();
+    });
+  });
+}
+
+function dig(position?: Object): Promise<void> {
   position = position ? position : bot.entity.position.offset(0, -1, 0)
   if (bot.targetDigBlock) {
     bot.chat('already digging ' + bot.targetDigBlock.name);
+    return Promise.resolve();
   } else {
     var target = bot.blockAt(position);
     if (target && bot.canDigBlock(target)) {
@@ -78,21 +96,21 @@ function dig(position) {
   }
 }
 
-var digWallTask = function(height) {
+function digWallTask(height) {
   if (height === 0) {
     return Promise.resolve();
   } else {
     return dig(center(bot.entity.position.offset(1,height-1,0)))
-              .then(()=>{return digWallTask(height-1)});
+              .then(() => digWallTask(height-1));
   }
 }
 
-function digStairTask(steps, height) {
+function digStairTask(steps: number, height?: number) {
   // Height of 2-5
-  height = height === undefined? 2 : height;
-  height = Math.min(height, 5);
-  height = Math.max(height, 2);
-  console.log('height' + height);
+  var h = height || 2;
+  h = Math.min(h, 5);
+  h = Math.max(h, 2);
+  console.log('height' + h);
   if (steps === 0) {
     console.log('done');
     return Promise.resolve();
@@ -100,19 +118,19 @@ function digStairTask(steps, height) {
     console.log('dig step ' + steps);
 
     // Dig down
-    return dig().then(()=>{return sleep(1000)})
+    return dig().then(() => sleep(1000))
 
                 // // Dig front
-                // .then(()=>{return dig(center(bot.entity.position.offset(1,0,0)))})
+                // .then(() => dig(center(bot.entity.position.offset(1,0,0))))
                 // // Dig front and up
-                // .then(()=>{return dig(center(bot.entity.position.offset(1,1,0)))})
-                .then(()=>{return digWallTask(height)})
+                // .then(() => dig(center(bot.entity.position.offset(1,1,0))))
+                .then(() => digWallTask(h))
 
                 // Move forward
-                .then(()=>{return moveTo(center(bot.entity.position.offset(1,0,0)))})
-                .then(()=>{return sleep(100)})
+                .then(() => moveTo(center(bot.entity.position.offset(1,0,0))))
+                .then(() => sleep(100))
                 // Repeat
-                .then(()=>{return digStairTask(steps-1, height)});
+                .then(() => digStairTask(steps-1, h));
   }
 }
 
@@ -142,20 +160,19 @@ function interrupt(cont, value) {
 }
 
 
-function keepDigging(n) {
+function keepDigging(n: number): Promise<void> {
   if (n === 0) {
-    bot.chat('finished digging');
+    // bot.chat('finished digging');
     return Promise.resolve();
   } else {
-    return dig().then(() => {return sleep(1000)})
-                .then(() => {return keepDigging(n - 1);
-    });
+    return dig().then(() => sleep(1000))
+                .then(() => keepDigging(n - 1));
   }
 }
 
-function build() {
+function buildUnder(): Promise<void> {
   return new Promise((resolve, reject) => {
-    var referenceBlock = bot.blockAt(bot.entity.position.offset(0, -1, 0));
+    var referenceBlock = blockUnderneath();
 
     var jumpY = bot.entity.position.y + 1.0;
     bot.setControlState('jump', true);
@@ -165,32 +182,32 @@ function build() {
       if (bot.entity.position.y > jumpY) {
         bot.placeBlock(referenceBlock, mineflayer.vec3(0, 1, 0), function(err) {
           if (err) {
-            bot.chat(err.message);
             reject(err);
+          } else {
+            // bot.chat('Placing a block was successful');
+            resolve();
+            bot.setControlState('jump', false);
+            bot.removeListener('move', placeIfHighEnough);
           }
-          bot.chat('Placing a block was successful');
-          resolve();
         });
-        bot.setControlState('jump', false);
-        bot.removeListener('move', placeIfHighEnough);
       }
     }
-  });
+  }).then(() => sleep(200));
 }
 
-var equipItem = _.curry(function(id) {
+function equipItem(id: number): Promise<void> {
   return new Promise((resolve, reject) => {
     bot.equip(id, 'hand', function(err) {
       if (err) {
-        reject(id);
+        reject(err);
       } else {
-        resolve(id);
+        resolve();
       }
     });
-  });
-});
+  }).then(() => sleep(200));
+};
 
-function itemToString(item) {
+function itemToString(item): string {
   if (item) {
     return item.name + ' x ' + item.count;
   } else {
@@ -210,7 +227,7 @@ function navigateTo(path) {
   });
 }
 
-function moveTo(goalPosition) {
+function moveTo(goalPosition: Object) {
   goalPosition = center(goalPosition);
   if (goalPosition.distanceTo(bot.entity.position) <= 0.1) {
     return Promise.resolve();
@@ -234,7 +251,7 @@ function moveTo(goalPosition) {
   }
 }
 
-function acceptTpaRequests(bot, message) {
+function acceptTpaRequests(bot: Bot, message: Object) {
   if (!message.extra || message.extra.length !== 3) {
     return;
   }
@@ -282,9 +299,58 @@ var tossOne = function() {
   });
 }
 
-var tossAll = function(type, count) {
+var tossAll = function() {
   return new Promise((resolve, reject) => {
     return tossOne().then(()=>{return sleep(500)})
                     .then(()=>{return tossAll()});
     });
+}
+
+function getInventoryCountOf(id: number): number {
+  var slotsOfId = _.filter(bot.inventory.slots, i => i && i.type === id);
+  return _.sumBy(slotsOfId, i => i.count);
+}
+
+function grindGravel(): Promise<void> {
+  const BUILD = true;
+  const DIG = false;
+
+  function aux(state: boolean, flipflops: number): Promise<void> {
+    if (flipflops > 5) {
+      bot.chat('done grinding gravel');
+      return Promise.resolve();
+    } else if (state === BUILD) {
+      if (getInventoryCountOf(GRAVEL) > 0) {
+        return equipItem(GRAVEL)
+          .then(() => buildUnder(GRAVEL))
+          .catch(err => {
+            console.log('could not place block', err);
+            return aux(DIG, 0);
+          })
+          .then(() => aux(BUILD, 0))
+      } else {
+        return aux(DIG, flipflops + 1);
+      }
+    } else if (state === DIG) {
+      if (blockUnderneath().type === GRAVEL) {
+        return equipItem(STONE_SHOVEL)
+          .catch(() => {
+            bot.chat("my shovel is gone BUT I MUST DIG");
+            return Promise.resolve();
+          })
+          .then(() => keepDigging(1))
+          .then(() => aux(DIG, 0))
+          .catch(err => {
+            console.log('error while digging', err, err.stack);
+            return aux(BUILD, 0);
+          });
+      } else {
+        return aux(BUILD, flipflops + 1);
+      }
+    } else {
+      console.log('invalid state', state);
+      return Promise.resolve();
+    }
+  }
+  return aux(BUILD, 0);
 }
