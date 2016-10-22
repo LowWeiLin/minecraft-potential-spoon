@@ -8,7 +8,7 @@
     "lodash": "^4.16.4",
     "mineflayer": "1.7.5",
     "mineflayer-auto-auth": "^0.1.1",
-    "mineflayer-navigate": "0.0.9"
+    "mineflayer-navigate": "LowWeiLin/mineflayer-navigate"
   },
   "devDependencies": {
     "flow-bin": "^0.33.0",
