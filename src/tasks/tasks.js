@@ -39,6 +39,7 @@ module.exports = function (theBot: Bot, theBotUsername: string, theMineflayer: O
         digForwardTask,
         blockUnderneath,
         grindGravel,
+        repeat,
         DIRT, GRAVEL, SWORD, // TODO do something more exhaustive
     };
 };
@@ -397,6 +398,16 @@ var tossAll = function() {
 function getInventoryCountOf(id: number): number {
   var slotsOfId = _.filter(bot.inventory.slots, i => i && i.type === id);
   return _.sumBy(slotsOfId, i => i.count);
+}
+
+function repeat<T>(n: number, action: () => Promise<T>): Promise<T[]> {
+  if (n === 0) {
+    return Promise.resolve([]);
+  } else {
+    return action().then(result =>
+      repeat(n - 1, action).then(rest =>
+        [result].concat(rest)));
+  }
 }
 
 function grindGravel(): Promise<void> {

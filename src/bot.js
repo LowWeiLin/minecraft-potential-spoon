@@ -38,9 +38,9 @@ bot.on('chat', function(username, message) {
   } catch (err) {
     return;
   }
-  
+
   message = splitMessage.slice(1).join(' ').trim();
-  
+
   switch (message) {
     case 'face N':
     case 'face S':
