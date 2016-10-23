@@ -16,6 +16,7 @@ const GRAVEL = 13;
 const SWORD = 267;
 const STONE_SHOVEL = 273;
 
+var kbf = keepBuildingForward;
 
 module.exports = function (theBot: Bot, theBotUsername: string, theMineflayer: Object) {
     bot = theBot;
@@ -27,6 +28,8 @@ module.exports = function (theBot: Bot, theBotUsername: string, theMineflayer: O
         sayItems,
         keepDigging,
         buildUnder,
+        buildForward,
+        keepBuildingForward, kbf,
         equipItem,
         findTargetNear,
         getPlayerByUsername,
@@ -257,6 +260,27 @@ function keepDigging(n: number): Promise<void> {
     return dig().then(() => sleep(1000))
                 .then(() => keepDigging(n - 1));
   }
+}
+
+function keepBuildingForward(times: number): Promise<void[]> {
+  return repeat(times, () => {
+    return buildForward().then(()=>moveTo(facingOffset()));
+  });
+}
+//kbf(10)
+function buildForward(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    var referenceBlock = blockUnderneath();
+    bot.placeBlock(referenceBlock, bot.facing, function(err) {
+      if (err) {
+        console.log(err);
+        reject(err);
+      } else {
+        console.log('done');
+        resolve();
+      }
+    });
+  }).then(() => sleep(200));
 }
 
 function buildUnder(): Promise<void> {
