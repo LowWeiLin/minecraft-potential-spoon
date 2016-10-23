@@ -16,11 +16,14 @@ const GRAVEL = 13;
 const SWORD = 267;
 const STONE_SHOVEL = 273;
 
+
 module.exports = function (theBot: Bot, theBotUsername: string, theMineflayer: Object) {
     bot = theBot;
     botUsername = theBotUsername;
     mineflayer = theMineflayer;
+    face('N');
     return {
+        face,
         sayItems,
         keepDigging,
         buildUnder,
@@ -39,6 +42,27 @@ module.exports = function (theBot: Bot, theBotUsername: string, theMineflayer: O
         DIRT, GRAVEL, SWORD, // TODO do something more exhaustive
     };
 };
+
+function face(direction: string) {
+  switch(direction) {
+    case 'N':
+      bot.facing = mineflayer.vec3(0,0,-1);
+      break;
+    case 'S':
+      bot.facing = mineflayer.vec3(0,0,1);
+      break;
+    case 'E':
+      bot.facing = mineflayer.vec3(1,0,0);
+      break;
+    case 'W':
+      bot.facing = mineflayer.vec3(-1,0,0);
+      break;
+  }
+}
+
+function facingOffset() {
+  return bot.entity.position.offset(bot.facing.x,bot.facing.y,bot.facing.z);
+}
 
 var findTargetNear = getRandomPlayer;
 
@@ -77,7 +101,7 @@ function isSafe(block) {
 
 function findSafeStandingBlockForward(): ?Block {
   for (var i=0 ; i<3 ; i++) {
-    var block = bot.blockAt(bot.entity.position.offset(1, -i, 0));
+    var block = bot.blockAt(facingOffset().offset(0, -i, 0));
     if (isSafe(block) && block.type !== AIR) {
       return block;
     }
@@ -109,12 +133,12 @@ function adjacentPositions(position: Object): Array<Object> {
 }
 
 function safeDig(position?: Object) {
-  position = position ? position : bot.entity.position.offset(0, -1, 0)
+  position = position ? position : facingOffset().offset(0, -1, 0)
   // Check blocks adjacent to target before digging.
   var adjPositions = adjacentPositions(position);
   for (var i=0 ; i<adjPositions.length ; i++) {
     var block = bot.blockAt(adjPositions[i]);
-    if (isSafe(block)) {
+    if (!isSafe(block)) {
       bot.chat("It's not safe to dig any further! " + "There is " + block.type);
       return Promise.resolve();
     }
@@ -142,7 +166,7 @@ function digWallTask(height: number): Promise<void> {
   if (height === 0) {
     return Promise.resolve();
   } else {
-    return safeDig(center(bot.entity.position.offset(1,height-1,0)))
+    return safeDig(center(facingOffset().offset(0,height-1,0)))
               .then(() => digWallTask(height-1));
   }
 }

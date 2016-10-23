@@ -42,6 +42,12 @@ bot.on('chat', function(username, message) {
   message = splitMessage.slice(1).join(' ').trim();
   
   switch (message) {
+    case 'face N':
+    case 'face S':
+    case 'face E':
+    case 'face W':
+      tasks.face(message.split(' ')[1]);
+      break;
     case 'list':
       tasks.sayItems();
       break;
