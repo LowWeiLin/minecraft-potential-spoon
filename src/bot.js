@@ -38,6 +38,15 @@ bot.on('chat', function(username, message) {
   } catch (err) {
     return;
   }
+  var messageTo = [];
+  var botIndex = 0;
+  for (var k in bot.players){
+    if (new RegExp('^' + splitMessage[0]).test(k)) {
+      messageTo.push(k);
+    }
+  }
+  messageTo.sort();
+  botIndex = messageTo.indexOf(bot.username);
 
   message = splitMessage.slice(1).join(' ').trim();
 
@@ -101,6 +110,24 @@ bot.on('chat', function(username, message) {
       var target = tasks.getPlayerByUsername(bot, username);
       if (target) {
         tasks.moveTo(target.position, 10).then(() => {
+          bot.chat('Hey im at ' + bot.entity.position.toString());
+        });
+      } else {
+        bot.chat('/tpa ' + username);
+      }
+      break;
+    case 'line1':
+    case 'line2':
+      var n = parseInt(message[4]);
+      bot.chat('On the way boss');
+      var target = tasks.getPlayerByUsername(bot, username);
+      var position = target?target.position:mineflayer.vec3(0,0,0);
+      
+      for (var i=0 ; i<botIndex*n ; i++) {
+        position = position.offset(bot.facing.x,bot.facing.y,bot.facing.z);
+      }
+      if (target) {
+        tasks.moveTo(position).then(() => {
           bot.chat('Hey im at ' + bot.entity.position.toString());
         });
       } else {

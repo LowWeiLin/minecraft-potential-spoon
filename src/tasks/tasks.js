@@ -25,6 +25,7 @@ module.exports = function (theBot: Bot, theBotUsername: string, theMineflayer: O
     face('N');
     return {
         face,
+        facingOffset,
         sayItems,
         keepDigging,
         buildUnder,
@@ -160,7 +161,8 @@ function dig(position?: Object): Promise<void> {
     if (target && bot.canDigBlock(target)) {
       return digTask(target);
     } else {
-      bot.chat('cannot dig');
+      // bot.chat('cannot dig');
+      console.log('cannot dig');
       return Promise.resolve();
     }
   }
