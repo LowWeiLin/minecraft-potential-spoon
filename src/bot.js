@@ -61,6 +61,14 @@ bot.on('chat', function(username, message) {
 
   message = splitMessage.slice(1).join(' ').trim();
 
+  var commandGiverEntity = bot.players[username] ? bot.players[username].entity : undefined;
+  if (commandGiverEntity !== undefined) {
+    var headYaw = commandGiverEntity.headYaw % (2.0*Math.PI);
+    var facing = Math.floor((headYaw + Math.PI/4.0) / (Math.PI/2.0)) % 4;
+    facing = ['N', 'W', 'S', 'E'][facing];
+    tasks.face(facing);
+  }
+
   switch (message) {
     case 'face N':
     case 'face S':
