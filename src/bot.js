@@ -27,6 +27,17 @@ console.log(process.argv);
 (require('mineflayer-navigate'))(mineflayer)(bot);
 
 bot.on('message', function(message) {
+  var chatPattern = /\[(.+?)?\] (.+): (.*)$/
+  var match;
+  var stringMsg = message.toString();
+  if(match = stringMsg.match(chatPattern)) {
+    var tag = match[1];
+    var username = match[2];
+    var msg = match[3];
+    bot.emit('chat', username, msg, null, {text: stringMsg}, match)
+    return;
+  }
+
   tasks.acceptTpaRequests(bot, message);
 });
 

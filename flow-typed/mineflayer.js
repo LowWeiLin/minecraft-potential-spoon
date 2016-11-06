@@ -29,6 +29,7 @@ declare module "mineflayer" {
     removeListener: (event: string, callback: Function) => void,
     equip: (item: number, where: string, callback: Function) => void,
     navigate: any,
+    emit: any,
     quit: () => void,
   }
 
